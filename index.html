@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mi Posición</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="text/javascript" src="cordova.js"></script>
+<link href='http://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
+<link rel="stylesheet" href="css/jquery.mobile-1.4.5.min.css" />
+
+<script type="text/javascript" src="js/jquery-2.1.4.min.js"/></script>
+<script type="text/javascript" src="js/jquery.mobile-1.4.5.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+
+// Call onDeviceReady when PhoneGap is loaded.
+//
+// At this point, the document has loaded but phonegap-1.0.0.js has not.
+// When PhoneGap is loaded and talking with the native device,
+// it will call the event `deviceready`.
+
+
+// 
+document.addEventListener("deviceready", onDeviceReady, false);
+
+var watchID = null;
+
+// PhoneGap is loaded and it is now safe to make calls PhoneGap methods
+//
+function onDeviceReady() {
+	// Now safe to use the PhoneGap API
+	
+	$('#btnPosicion').click(function (){
+		obtenerPosicion();		
+	});
+	$('#btnPararPosicion').click(function (){
+		clearWatch();
+	});
+}
+
+function getISODateTime(d){
+    // padding function
+    var s = function(a,b){return(1e15+a+"").slice(-b)};
+
+    // default date parameter
+    if (typeof d === 'undefined'){
+        d = new Date();
+    };
+
+    // return ISO datetime
+    return s(d.getDate(),2) + '-' +
+		s(d.getMonth()+1,2) + '-' +
+		d.getFullYear() + ' ' +
+        s(d.getHours(),2) + ':' +
+        s(d.getMinutes(),2) + ':' +
+        s(d.getSeconds(),2);
+}
+
+function obtenerPosicion() {
+	var onSuccess = function(position) {
+		var fecha = new Date(position.timestamp);
+		fecha = getISODateTime(fecha);
+		var cadenaPosicion = position.coords.latitude + ", " + position.coords.longitude + " (" + position.coords.accuracy.toFixed(2) + ")"; 
+		$('#posicion').text (cadenaPosicion);
+		//Google Maps
+		var pos = {
+			lat: position.coords.latitude,
+			lng: position.coords.longitude
+		};
+		
+		infoWindow.setPosition(pos);
+		infoWindow.setContent(fecha);
+		map.setCenter(pos);
+		
+	}
+	function onError(error) {
+		$('#posicion').text ("Error code: " + error.code + "\n" + "Mensaje: " + error.message );
+	}
+	//navigator.geolocation.getCurrentPosition(onSuccess, onError);	
+	var options = { maximumAge: 3000, timeout: 5000, enableHighAccuracy: true };
+	watchID = navigator.geolocation.watchPosition(onSuccess, onError, options);
+}
+
+    // clear the watch that was started earlier
+    //
+    function clearWatch() {
+        if (watchID != null) {
+            navigator.geolocation.clearWatch(watchID);
+            watchID = null;
+			$('#posicion').text ("");
+        } else {
+			alert("watchID es nulo");
+		}
+    }
+	
+</script>
+<style>
+#map { width: 100%; height: 280px; }
+#posicion { font-family: 'Raleway', sans-serif; }
+</style>
+</head>
+<body>
+
+<div data-role="page">
+  <div data-role="header" data-position="fixed" data-theme="b">
+    <h1>Mi Posición</h1>
+  </div>
+  <div data-role="content">
+     <div id="posicion"></div>
+	 <div><button id="btnPosicion">Obtener posición</button></div>
+	 <div><button id="btnPararPosicion">Parar posición</button></div>
+	 <div id="map"></div>
+  </div>
+</div>
+<!--end of Soccer Player Page--->
+
+<script type="text/javascript">
+
+var map;
+var infoWindow;
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: {lat: 28.1203, lng: -15.425},
+    zoom: 16
+  });
+  infoWindow = new google.maps.InfoWindow({map: map});
+}
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaQ0ZSR5yLwSXyiM2rwHp22STCg9fIM8U&callback=initMap"></script>
+
+</body>
+</html>
