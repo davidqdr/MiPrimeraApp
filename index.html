@@ -4,12 +4,16 @@
 <title>Mi Posición</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script type="text/javascript" src="cordova.js"></script>
+
 <link href='http://fonts.googleapis.com/css?family=Raleway' rel='stylesheet' type='text/css'>
 <link rel="stylesheet" href="css/jquery.mobile-1.4.5.min.css" />
 
 <script type="text/javascript" src="js/jquery-2.1.4.min.js"/></script>
 <script type="text/javascript" src="js/jquery.mobile-1.4.5.min.js"></script>
 <script type="text/javascript" charset="utf-8">
+
+var map, infoWindow;
+map = infoWindow = null;
 
 // Call onDeviceReady when PhoneGap is loaded.
 //
@@ -21,7 +25,42 @@
 // 
 document.addEventListener("deviceready", onDeviceReady, false);
 
+// Base de datos
+
+function populateDB(tx) 
+{
+	tx.executeSql('DROP TABLE IF EXISTS table1');
+    tx.executeSql('CREATE TABLE IF NOT EXISTS table1(id INTEGER PRIMARY KEY AUTOINCREMENT,sName VARCHAR)');
+	tx.executeSql('INSERT INTO table1 (id, sName) VALUES (1, "Tony")');
+	tx.executeSql('INSERT INTO table1 (id, sName) VALUES (2, "Bill")');
+	tx.executeSql('INSERT INTO table1 (id, sName) VALUES (3, "Thomas")');
+	
+}
+ 
+function queryDB(tx) {
+	tx.executeSql('SELECT * FROM table1', [], querySuccess, errorDB);
+}
+function querySuccess(tx, results) {
+	var len = results.rows.length;
+	var string = "Rows: " + len + " ";
+	for (var i=0; i<len; i++) {
+		string += results.rows.item(i).sName + " ";
+	}
+	$('#posicion').text(string);
+}
+
+function errorDB(err) {
+	alert("Error processing SQL: " + err.code);
+}
+
+function successDB() {
+	var db = window.openDatabase("Test","1.0", "Test", 200000);
+	db.transaction(queryDB, errorDB);
+}
+
 var watchID = null;
+
+
 
 // PhoneGap is loaded and it is now safe to make calls PhoneGap methods
 //
@@ -34,7 +73,15 @@ function onDeviceReady() {
 	$('#btnPararPosicion').click(function (){
 		clearWatch();
 	});
+	
+	// Base de datos
+	var db = window.openDatabase("Test", "1.0", "Test", 200000);
+	db.transaction(populateDB, errorDB, successDB);
+	
 }
+
+
+ 
 
 function getISODateTime(d){
     // padding function
@@ -66,6 +113,10 @@ function obtenerPosicion() {
 			lng: position.coords.longitude
 		};
 		
+		if (! infoWindow) {
+			infoWindow = new google.maps.InfoWindow({map: map});
+		} 
+		
 		infoWindow.setPosition(pos);
 		infoWindow.setContent(fecha);
 		map.setCenter(pos);
@@ -86,9 +137,7 @@ function obtenerPosicion() {
             navigator.geolocation.clearWatch(watchID);
             watchID = null;
 			$('#posicion').text ("");
-        } else {
-			alert("watchID es nulo");
-		}
+        }
     }
 	
 </script>
@@ -101,31 +150,46 @@ function obtenerPosicion() {
 
 <div data-role="page">
   <div data-role="header" data-position="fixed" data-theme="b">
-    <h1>Mi Posición</h1>
+		<a href="#" class="ui-btn ui-btn-b ui-corner-all ui-shadow ui-icon-home ui-btn-icon-left">Inicio</a>
+    <h1>RapidTrack</h1>
+	    <a href="#" class="ui-btn ui-corner-all ui-shadow ui-icon-navigation ui-btn-icon-left">Mapa</a>
   </div>
-  <div data-role="content">
+  <div data-role="main" class="ui-content">
+
+    
      <div id="posicion"></div>
-	 <div><button id="btnPosicion">Obtener posición</button></div>
-	 <div><button id="btnPararPosicion">Parar posición</button></div>
+	 <button id="btnPosicion" class="ui-btn ui-btn-b ui-btn-inline ui-corner-all">Obtener posición</button>
+	 <button id="btnPararPosicion" class="ui-btn ui-btn-b ui-btn-inline ui-corner-all">Parar posición</button>
 	 <div id="map"></div>
+  </div>
+  <div data-role="footer">
+    <h1>Footer Text</h1>
   </div>
 </div>
 <!--end of Soccer Player Page--->
 
 <script type="text/javascript">
 
-var map;
-var infoWindow;
+
 
 function initMap() {
   map = new google.maps.Map(document.getElementById('map'), {
     center: {lat: 28.1203, lng: -15.425},
     zoom: 16
   });
-  infoWindow = new google.maps.InfoWindow({map: map});
 }
 </script>
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBaQ0ZSR5yLwSXyiM2rwHp22STCg9fIM8U&callback=initMap"></script>
 
 </body>
 </html>
+
+<!--
+  <a href="#myPopup" data-rel="popup" class="ui-btn ui-btn-b ui-btn-inline ui-corner-all">Show Popup</a>
+  <div data-role="popup" id="myPopup" class="ui-content" data-theme="b">
+      <a href="#" data-rel="back" class="ui-btn ui-btn-a ui-corner-all ui-shadow ui-btn ui-icon-delete ui-btn-icon-notext ui-btn-right">Close</a>
+      <p>I am a themed popup!.</p>
+      <p>I have a close button at the top right corner.</p>
+      <p><b>Tip:</b> You can also click outside to close me.</p>
+    </div>
+-->
